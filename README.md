@@ -7,6 +7,7 @@
 ![Node](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Version](https://img.shields.io/badge/version-1.0.0-purple)
+[![Changelog](https://img.shields.io/badge/changelog-v1.0.0-orange)](CHANGELOG.md)
 
 <p>
   <a href="vscode://file/Users/jpkoech/roo-mini">

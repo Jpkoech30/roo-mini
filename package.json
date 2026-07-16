@@ -4,14 +4,20 @@
   "description": "Lightweight AI coding assistant with MCP support and multi-agent orchestration",
   "type": "module",
   "main": "src/index.mjs",
-  "scripts": {
+    "scripts": {
     "start": "node src/index.mjs",
     "dev": "node src/index.mjs -v",
     "setup": "node src/config/setup.mjs",
     "costs": "node scripts/costs.mjs",
     "test": "node --test tests/*.test.mjs",
     "lint": "eslint src/ tests/",
-    "check": "npm run lint && npm test"
+    "check": "npm run lint && npm test",
+    "version:current": "node scripts/version.mjs",
+    "version:patch": "node scripts/version.mjs patch",
+    "version:minor": "node scripts/version.mjs minor",
+    "version:major": "node scripts/version.mjs major",
+    "version:tag": "node -p \"require('./package.json').version\" | xargs -I {} git tag v{} && git push --tags",
+    "version:bump-release": "npm run version:patch && git add -A && git commit -m \"chore: bump version to $(node -p \"require('./package.json').version\")\" && git tag v$(node -p \"require('./package.json').version\") && git push && git push --tags"
   },
   "dependencies": {
     "boxen": "^7.1.1",
