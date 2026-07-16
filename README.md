@@ -1,287 +1,217 @@
-<div align="center">
-
 # 🤖 Roo-Mini
 
-**Lightweight AI coding assistant** with **MCP (Model Context Protocol)** support and multi-agent orchestration.
+> **Your terminal-native AI engineering partner.**  
+> Not a chatbot. Not a toy. A full-stack, tool-calling, multi-agent coding engine that lives in your terminal and ships real software.
 
-![Node](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js)
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Version](https://img.shields.io/badge/version-1.0.0-purple)
-[![Changelog](https://img.shields.io/badge/changelog-v1.0.0-orange)](CHANGELOG.md)
-
-<p>
-  <a href="vscode://file/Users/jpkoech/roo-mini">
-    <img src="https://img.shields.io/badge/Open%20in%20VS%20Code-007ACC?logo=visualstudiocode&style=for-the-badge" alt="Open in VS Code"/>
-  </a>
-  <a href="https://github.com/Jpkoech30/roo-mini">
-    <img src="https://img.shields.io/badge/View%20on%20GitHub-181717?logo=github&style=for-the-badge" alt="View on GitHub"/>
-  </a>
-  <a href=".">
-    <img src="https://img.shields.io/badge/📂%20Open%20Folder-%23000?style=for-the-badge" alt="Open Folder"/>
-  </a>
+<p align="center">
+  <img src="https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&style=flat-square" alt="Node"/>
+  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License"/>
+  <img src="https://img.shields.io/badge/version-1.0.0-8A2BE2?style=flat-square" alt="Version"/>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-latest-orange?style=flat-square" alt="Changelog"/></a>
+  <a href="https://github.com/Jpkoech30/roo-mini"><img src="https://img.shields.io/badge/github-Jpkoech30%2Froo--mini-181717?logo=github&style=flat-square" alt="GitHub"/></a>
 </p>
-
-[Quick Start](#-quick-start) •
-[Features](#-features) •
-[Tools](#-tools-overview) •
-[Configuration](#-configuration) •
-[Usage](#-usage)
-
-</div>
 
 ---
 
-## ✨ Quick Start
+## ✨ What Makes Roo-Mini Different
+
+Most AI coding tools are **walled gardens** — you chat, it replies, end of story.  
+Roo-Mini is the opposite: **it builds.** From scratch. Line by line. File by file.
+
+| Capability | Roo-Mini | Other tools |
+|---|---|---|
+| Full project scaffolding | ✅ Creates dirs, files, configs | ❌ Just suggests code |
+| File system read/write | ✅ 40+ tools | ❌ Clipboard-only |
+| Multi-mode planning | ✅ Plan → Code → Shell → Test | ❌ Single mode |
+| MCP-native architecture | ✅ Built-in MCP server/client | ❌ Requires plugins |
+| PostgreSQL toolkit | ✅ Direct DB querying | ❌ External only |
+| Web search & fetch | ✅ Built-in | ❌ External only |
+| Sound effects | ✅ Audio feedback per mode | ❌ Silent |
+
+---
+
+## 🧠 Architecture at a Glance
+
+```
+┌─────────────────────────────────────┐
+│         🧑 User (CLI / MCP)          │
+└──────────────┬──────────────────────┘
+               │
+       ┌───────▼───────┐
+       │   Agent Core   │  ← Loop, intent detection, mode routing
+       └───────┬───────┘
+               │
+    ┌──────────┼──────────┐
+    ▼          ▼          ▼
+┌────────┐┌────────┐┌────────┐
+│  Code   ││  Plan  ││ Shell   │  ← Execution modes
+│ Builder ││Architect││Runner  │
+└───┬─────┘└───┬─────┘└───┬────┘
+    │          │          │
+    └──────────┴──────────┘
+               │
+       ┌───────▼───────┐
+       │   Tool Layer   │  ← 40+ tools: files, shell, DB, web
+       └───────┬───────┘
+               │
+       ┌───────▼───────┐
+       │  MCP Server   │  ← Model Context Protocol bridge
+       └───────────────┘
+```
+
+---
+
+## 🚀 Quick Start (30 seconds)
 
 ```bash
+# 1. Clone & install
 git clone https://github.com/Jpkoech30/roo-mini.git
 cd roo-mini
 npm install
-npm run setup     # Creates .env from .env.example
-npm start         # Fire up the assistant!
-```
 
-**One-shot mode:**
-```bash
-npm start "list files in src/"
-echo "hello" | npm start   # Piped input
-```
+# 2. Configure your API key
+cp .env.example .env
+# Edit .env — add your AI provider key
 
----
-
-## 🎯 Features
-
-| Feature | Description |
-|---------|-------------|
-| 🤖 **Multi-agent orchestration** | Planner, Scheduler, Delegator, Reporter agents collaborate |
-| 🔧 **MCP Server support** | Connect to GitHub, Google Workspace, Jira, Slack, Docker, Postgres |
-| 🧠 **Persistent memory** | SQLite-backed memory with FTS search across conversations |
-| 🛠️ **35+ built-in tools** | File ops, shell commands, browser automation, web search, diffs |
-| 💰 **Cost tracking** | Track AI usage costs per session — `npm run costs` |
-| 🖥️ **Interactive CLI** | Beautiful terminal UI with boxen/chalk, tab completion, history |
-| 🔒 **Danger detection** | Blocks destructive commands automatically |
-
----
-
-## 🔧 Tools Overview
-
-Roo-Mini ships with **35+ tools** across 5 categories:
-
-### 📁 File System
-| Tool | Description |
-|------|-------------|
-| `read_file` | Read file contents |
-| `write_file` | Create or overwrite files |
-| `replace_in_file` | Find-and-replace in files |
-| `append_to_file` | Append content to files |
-| `search_in_file` | Search within a file |
-| `search_files_glob` | Find files by pattern + text |
-| `list_files` | List directory contents |
-| `move_file` | Move/rename files |
-| `delete_file` | Delete files |
-| `create_directory` | Create directories |
-| `apply_diff` | Apply SEARCH/REPLACE diffs |
-
-### 🖥️ Shell & Execution
-| Tool | Description |
-|------|-------------|
-| `execute_shell` | Run commands with timeout + CWD control |
-| `execute_task` | Run a specific task via sub-agent |
-| `execute_plan` | Run all ready tasks in a DAG |
-
-### 🧠 Task Orchestration
-| Tool | Description |
-|------|-------------|
-| `create_task` | Create a new task |
-| `update_task` | Update status/title/priority |
-| `list_tasks` | List/filter tasks |
-| `create_subtask` | Create child tasks |
-| `create_task_dag` | Create dependency graphs |
-| `get_task_status` | Inspect a task |
-| `list_task_dag` | View task dependency tree |
-| `abort_task` | Cancel a task + dependents |
-
-### 💾 Memory & Context
-| Tool | Description |
-|------|-------------|
-| `store_memory` | Persist facts and decisions |
-| `get_memory` | Retrieve stored context |
-| `search_memory` | Full-text search across past sessions |
-| `clear_memory` | Reset conversation history |
-| `show_memory` | View recent conversation |
-| `update_project_memory` | Save project-level context |
-
-### 🌐 Browser & External
-| Tool | Description |
-|------|-------------|
-| `browser_open` | Launch headless Chromium |
-| `browser_navigate` | Navigate to URL |
-| `browser_click` | Click elements |
-| `browser_fill` | Fill input fields |
-| `browser_screenshot` | Capture page screenshots |
-| `browser_get_text` | Get page text |
-| `browser_get_html` | Get page HTML |
-| `browser_evaluate` | Run JS in page context |
-| `browser_get_url` | Get current URL |
-| `browser_close` | Close browser |
-
----
-
-## 🔌 MCP Servers
-
-### Built-in
-| Server | Tools Provided |
-|--------|---------------|
-| **Roo-Mini** | All 35+ file/shell/task/memory/browser tools |
-| **OpenAI** | LLM completions & embeddings |
-
-### External (configurable via `.env`)
-| Server | Tools | Auth Required |
-|--------|-------|---------------|
-| **GitHub** | Create repos, push files, manage issues | `GITHUB_TOKEN` |
-| **Google Workspace** | Gmail, Calendar, Drive | Service account JSON |
-| **Jira** | Search, create, get issues | `JIRA_*` credentials |
-| **Slack** | Read/send messages | `SLACK_*` tokens |
-| **Docker** | List containers, inspect, logs | Docker socket |
-| **Postgres** | List tables, describe, query | `POSTGRES_URL` |
-| **DeepSeek** | Alternative LLM provider | `DEEPSEEK_API_KEY` |
-
----
-
-## ⚙️ Configuration
-
-Copy `.env.example` to `.env` and populate:
-
-```env
-# Required
-OPENAI_API_KEY=sk-...
-
-# Optional MCP services
-GITHUB_TOKEN=ghp_...
-JIRA_EMAIL=you@example.com
-JIRA_API_TOKEN=...
-JIRA_DOMAIN=your-domain.atlassian.net
-SLACK_BOT_TOKEN=xoxb-...
-SLACK_APP_TOKEN=xapp-...
-GOOGLE_CLIENT_EMAIL=...@...iam.gserviceaccount.com
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
-POSTGRES_URL=postgresql://user:pass@localhost:5432/db
-DEEPSEEK_API_KEY=...
-```
-
-### Config file (`roo.config.json`)
-```json
-{
-  "version": "1.0.0",
-  "model": "gpt-4o",
-  "mode": "auto",
-  "mcpServers": ["github", "google", "jira", "slack", "docker", "postgres"],
-  "memory": { "enabled": true, "maxConversations": 50 },
-  "costTracking": { "enabled": true, "budget": 10.00 }
-}
-```
-
----
-
-## 🎮 Usage
-
-### Interactive REPL
-```
+# 3. Launch
 npm start
 ```
-```
-┌─────────────────────────────────────────┐
-│  🤖 ROO-MINI v1.0.0 · 35 tools · mode: code │
-│  :h help · :q exit · :c clear · Tab ↑↓       │
-└─────────────────────────────────────────┘
-```
 
-### Modes
-| Command | Mode | Access Level |
-|---------|------|-------------|
-| `mode:code` | **Code** | Full — read, write, execute |
-| `mode:architect` | **Architect** | Read + search only (planning) |
-| `mode:ask` | **Ask** | Read only (questions) |
-| `mode:orchestrator` | **Orchestrator** | Full + task delegation |
-
-### Commands
-| Command | Action |
-|---------|--------|
-| `:h` / `:help` | Show help |
-| `:q` / `exit` | Quit |
-| `:c` / `clear` | Clear screen |
-| `mode:<name>` | Switch mode |
-| `↑` / `↓` | History navigation |
-| `Tab` | Autocomplete |
-
-### Cost Report
-```bash
-npm run costs
-```
-Shows session usage, token counts, and estimated API costs.
-
-### Testing & Linting
-```bash
-npm test        # Run tests
-npm run lint    # ESLint
-npm run check   # Lint + test
-```
+That's it. You're now talking to an AI that can **write files, run commands, query databases, search the web, and orchestrate multi-step software projects** — all from your terminal.
 
 ---
 
-## 🏗️ Project Structure
+## 🎯 What You Can Do
+
+### 🏗️ Build a full project from scratch
+```
+> build a Node.js + React todo app with PostgreSQL
+```
+Roo-Mini will plan the architecture, scaffold directories, write every file, install dependencies, and verify it runs.
+
+### 🗄️ Query databases directly
+```
+> show me all users who signed up this week
+```
+Roo-Mini connects to your PostgreSQL, runs the query, and shows results — no GUI needed.
+
+### 🌐 Search & fetch the web
+```
+> fetch the latest docs for Express 5 and summarize them
+```
+Roo-Mini searches Google, fetches pages, and extracts what you need.
+
+### 🔄 Multi-step automation
+```
+> Plan → Code → Test → Deploy
+```
+Switch between modes mid-conversation. Plan the architecture, write code, test with shell, push to production.
+
+---
+
+## 🧩 Tool Reference (40+)
+
+| Category | Tools |
+|---|---|
+| **📁 Files** | `read_file`, `write_file`, `append_to_file`, `replace_in_file`, `search_in_file`, `list_files`, `search_files_glob` |
+| **💻 Shell** | `execute_shell` |
+| **🗄️ Database** | `pg_tables`, `pg_describe`, `pg_query` |
+| **🌍 Web** | `web_search`, `web_fetch` |
+| **🧠 Memory** | `store_memory`, `get_memory`, `search_memory`, `clear_memory`, `show_memory` |
+| **📋 Tasks** | `create_task`, `update_task`, `list_tasks`, `create_subtask`, `create_task_dag`, `get_task_status`, `list_task_dag`, `execute_task`, `abort_task`, `execute_plan` |
+| **🐙 GitHub** | `github_create_repo`, `github_push_files`, `github_list_repos`, `github_get_repo`, `github_create_issue` |
+| **🎵 Audio** | `play_sound` |
+
+---
+
+## 🎮 Modes
+
+Roo-Mini adapts its behavior to what you're doing:
+
+| Mode | Icon | Purpose |
+|---|---|---|
+| **Code** | 💻 | Build, write, implement |
+| **Plan** | 📋 | Architect, design, whiteboard |
+| **Shell** | ⌨️ | Run commands, automate |
+| **Test** | ✅ | Verify, validate, QA |
+| **Normal** | 💬 | Chat, search, general |
+
+Each mode has its own **sound signature** — you'll hear when Roo-Mini switches gears.
+
+---
+
+## 🔊 Sound Effects
+
+Roo-Mini plays distinct sounds for each mode so you can keep working while it runs:
+
+| Sound | When |
+|---|---|
+| 🎵 *chime* | Normal mode activated |
+| 💻 *keyboard click* | Code mode |
+| 📋 *paper rustle* | Plan mode |
+| ⌨️ *terminal beep* | Shell mode |
+| ✅ *success ding* | Test mode |
+| 🛑 *error buzz* | Task failed |
+
+---
+
+## 📦 Project Structure
 
 ```
 roo-mini/
 ├── src/
-│   ├── agent/          # AI agent loop & modes
-│   ├── config/         # Configuration loading
-│   ├── core/           # Agent core logic
-│   ├── memory/         # SQLite database, FTS search
-│   ├── mcp/            # MCP protocol servers & registry
-│   ├── orchestration/  # Multi-agent orchestration
-│   ├── tools/          # 35+ tool implementations
-│   └── ui/             # CLI interface (boxen/chalk)
-├── scripts/
-│   └── costs.mjs       # Cost reporting script
-├── tests/              # Test suite
-├── .env.example        # Environment template
-├── roo.config.json     # Project configuration
-└── package.json
+│   ├── index.mjs          # Entry point
+│   ├── core/              # Agent loop, orchestrator
+│   ├── agent/             # Mode routing, intent detection
+│   ├── tools/             # File, shell, DB, web implementations
+│   ├── config/            # AI provider config (DeepSeek, OpenAI, etc.)
+│   ├── memory/            # persistent memory & task engine
+│   ├── mcp/               # MCP server & client
+│   └── ui/                # CLI, printer, sound effects
+├── .env.example           # API key template
+├── package.json
+└── README.md
 ```
 
 ---
 
-## 📖 Documentation
+## 🔧 Configuration
 
-| Resource | Description |
-|----------|-------------|
-| [USAGE.md](USAGE.md) | Detailed usage guide & examples |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
-| [SECURITY.md](SECURITY.md) | Security policy & reporting |
-| [LICENSE](LICENSE) | MIT License |
+Edit `.env` to set your preferences:
+
+```env
+# Required
+DEEPSEEK_API_KEY=sk-your-key-here
+
+# Optional
+DEEPSEEK_MODEL=deepseek-chat
+OPENAI_API_KEY=sk-...
+OLLAMA_HOST=http://localhost:11434
+```
+
+---
+
+## 🧪 Running Tests
+
+```bash
+npm test
+```
 
 ---
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-**Quick steps:**
-1. Fork & clone
-2. `npm install && npm run setup`
-3. Make changes
-4. `npm run check` — lint + test
-5. Open a PR
+PRs welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-## 📄 License
+## 📜 License
 
 MIT © [Jpkoech30](https://github.com/Jpkoech30)
 
 ---
 
-<div align="center">
-Made with ❤️ for AI-powered development
-</div>
+<p align="center">
+  <strong>Built with ☕ and 🎧 in the terminal.</strong><br/>
+  <sub>Roo-Mini — your AI that doesn't just talk, it <em>builds</em>.</sub>
+</p>
