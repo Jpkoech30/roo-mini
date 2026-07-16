@@ -193,3 +193,22 @@ src/
 | **Tasks** (3) | create, update, list |
 | **Orchestration** (7) | create_subtask, create_task_dag, list_task_dag, get_task_status, abort_task, execute_task, execute_plan |
 | **Browser** (10) | open, navigate, click, fill, screenshot, get_text, get_html, evaluate, get_url, close |
+
+---
+
+## Versioning
+
+Current version: **v1.0.0** — see [CHANGELOG.md](CHANGELOG.md) for full history.
+
+```bash
+# Show current version
+npm run version:current
+
+# Bump version (updates package.json, roo.config.json, VERSION)
+npm run version:patch    # 1.0.0 → 1.0.1
+npm run version:minor    # 1.0.0 → 1.1.0
+npm run version:major    # 1.0.0 → 2.0.0
+
+# Full release: bump, commit, tag, push
+npm run version:bump-release
+```
