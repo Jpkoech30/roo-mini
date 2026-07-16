@@ -6,6 +6,8 @@ import * as memory from "./memory.mjs";
 import * as tasks from "./tasks.mjs";
 import * as orchestrate from "./orchestrate.mjs";
 import * as browser from "./browser.mjs";
+import * as pg from "./pg.mjs";
+import * as web from "./web.mjs";
 
 export const toolImplementations = {
   read_file: files.readFile,
@@ -46,4 +48,9 @@ export const toolImplementations = {
   browser_evaluate: browser.browserEvaluate,
   browser_get_url: browser.browserGetURL,
   browser_close: browser.browserClose,
+  pg_tables: pg.pgTables,
+  pg_describe: pg.pgDescribe,
+  pg_query: pg.pgQuery,
+  web_fetch: web.webFetch,
+  web_search: web.webSearch,
 };

@@ -286,6 +286,28 @@ const toolDefinitions = [
       required: ["project_id"],
     },
   },
+  {
+    name: "web_fetch",
+    description: "Fetch a URL and return its text content (stripped of HTML). Use for reading documentation, APIs, or any web page.",
+    parameters: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "Full URL to fetch (including https://)" },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "web_search",
+    description: "Search the web using DuckDuckGo and return result snippets. Lightweight, no API key needed.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search query" },
+      },
+      required: ["query"],
+    },
+  },
 ];
 
 /**
@@ -295,6 +317,18 @@ export function getToolDefinition(name) {
   return toolDefinitions.find(t => t.name === name) || null;
 }
 
+/**
+ * Get all tool definitions formatted for OpenAI/DeepSeek API.
+ * Each tool is wrapped with `type: "function"` and nested under `function` key
+ * as required by the OpenAI chat completions API format.
+ */
 export function getAllToolDefinitions() {
-  return toolDefinitions;
+  return toolDefinitions.map(t => ({
+    type: "function",
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: t.parameters,
+    },
+  }));
 }

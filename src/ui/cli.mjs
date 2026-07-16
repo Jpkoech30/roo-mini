@@ -60,7 +60,7 @@ Type anything else to chat with the agent.
     try {
       const response = await agent.processMessage(input);
       console.log(`\n${response}\n`);
-      await appendToConversation(input, response);
+      await appendToConversation(input, response).catch(() => {});
     } catch (err) {
       console.error(`\nError: ${err.message}\n`);
     }

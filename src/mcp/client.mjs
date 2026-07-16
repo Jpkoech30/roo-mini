@@ -93,10 +93,11 @@ class MCPClient {
   }
 
   async _spawnServer(name, cfg) {
-    // Resolve env vars in config values
+    // Resolve env vars in config values — skip vars that resolve to empty string
     const resolvedEnv = {};
     for (const [key, value] of Object.entries(cfg.env || {})) {
-      resolvedEnv[key] = this._resolveEnv(String(value));
+      const resolved = this._resolveEnv(String(value));
+      if (resolved) { resolvedEnv[key] = resolved; }
     }
 
     const proc = spawn(cfg.command, cfg.args || [], {
@@ -104,18 +105,16 @@ class MCPClient {
       env: { ...process.env, ...resolvedEnv },
     });
 
-    let buffer = "";
+    const buf = { data: "" }; // Object wrapper so _processMessages can mutate it
     const pending = [];
 
     proc.stdout.on("data", (chunk) => {
-      buffer += chunk.toString();
-      this._processMessages(buffer, pending);
+      buf.data += chunk.toString();
+      this._processMessages(buf, pending);
     });
 
-    proc.stderr.on("data", (chunk) => {
-      // MCP servers may log warnings to stderr
-      const msg = chunk.toString().trim();
-      if (msg) {console.warn(`  ⚠ [${name}] ${msg}`);}
+    proc.stderr.on("data", () => {
+      // MCP server stderr is suppressed by default — too noisy on startup
     });
 
     proc.on("error", (err) => {
@@ -131,15 +130,18 @@ class MCPClient {
     });
 
     // Initialize the server
-    const initResult = await this._send(proc, pending, buffer, {
+    await this._send(proc, pending, {
       jsonrpc: "2.0",
       method: "initialize",
       params: {},
       id: 1,
     });
 
+    // Send required initialized notification
+    proc.stdin.write(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n");
+
     // Discover tools
-    const toolResult = await this._send(proc, pending, buffer, {
+    const toolResult = await this._send(proc, pending, {
       jsonrpc: "2.0",
       method: "tools/list",
       params: {},
@@ -151,26 +153,26 @@ class MCPClient {
       proc,
       tools: toolResult.tools || [],
       _pending: pending,
-      _buffer: buffer,
     };
   }
 
   /**
    * Process JSON-RPC messages from the buffer.
    * Validates response has either result or error.
+   * Mutates `buf.data` to remove processed messages.
    */
-  _processMessages(buffer, pending) {
+  _processMessages(buf, pending) {
     let idx;
-    while ((idx = buffer.indexOf("\n")) !== -1) {
-      const line = buffer.slice(0, idx).trim();
-      buffer = buffer.slice(idx + 1);
+    while ((idx = buf.data.indexOf("\n")) !== -1) {
+      const line = buf.data.slice(0, idx).trim();
+      buf.data = buf.data.slice(idx + 1);
       if (!line) {continue;}
       try {
         const msg = JSON.parse(line);
-        if (!msg.jsonrpc || (!msg.result && !msg.error)) {
-          console.warn(`  ⚠️ MCP: ignoring invalid response (missing result or error)`);
-          continue;
-        }
+
+        // Skip responses without valid structure
+        if (!msg.jsonrpc || (!msg.result && !msg.error)) {continue;}
+
         const pend = pending.find(p => p.id === msg.id);
         if (pend) {
           if (msg.error) {pend.reject(new Error(msg.error.message));}
@@ -178,7 +180,8 @@ class MCPClient {
           pending.splice(pending.indexOf(pend), 1);
         }
       } catch (parseErr) {
-        console.warn(`  ⚠️ MCP: ignoring invalid JSON: ${line.slice(0, 80)}`);
+        // Partial line — keep in buffer for next chunk
+        break;
       }
     }
   }
@@ -186,7 +189,7 @@ class MCPClient {
   /**
    * Send a JSON-RPC message to a server and wait for response.
    */
-  _send(proc, pending, buffer, msg) {
+  _send(proc, pending, msg) {
     return new Promise((resolve, reject) => {
       pending.push({ id: msg.id, resolve, reject });
       proc.stdin.write(JSON.stringify(msg) + "\n");
@@ -233,7 +236,7 @@ class MCPClient {
     const MCP_TIMEOUT = 30000;
 
     const result = await Promise.race([
-      this._send(server.proc, server._pending, server._buffer, {
+      this._send(server.proc, server._pending, {
         jsonrpc: "2.0",
         method: "tools/call",
         params: { name: toolName, arguments: args },

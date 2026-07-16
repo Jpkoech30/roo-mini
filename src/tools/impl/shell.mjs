@@ -5,6 +5,11 @@ import { config } from "../../config/index.mjs";
 const execAsync = promisify(exec);
 const IS_WINDOWS = process.platform === "win32";
 
+// On Windows 11, use PowerShell. It handles commands correctly without
+// entering interactive mode (e.g., `date` in cmd.exe opens a prompt).
+// PowerShell is available on all modern Windows systems.
+const SHELL = IS_WINDOWS ? "powershell.exe" : "/bin/bash";
+
 const DANGEROUS_PATTERNS = [
   { pattern: /\brm\s*[-/]+\s*rf\b/, desc: "recursive force delete" },
   { pattern: /\bmkfs\.\w+/, desc: "filesystem format" },
@@ -38,19 +43,21 @@ export async function executeShell(cwd, args) {
   }
 
   try {
-    const shell = IS_WINDOWS ? "cmd.exe" : "/bin/bash";
-    const shellFlag = IS_WINDOWS ? "/c" : "-c";
     const { stdout, stderr } = await execAsync(command, {
       cwd: cwd || process.cwd(),
       timeout: config.shellTimeout,
       maxBuffer: 1024 * 1024,
-      shell: `${shell} ${shellFlag}`,
+      shell: SHELL,
     });
     let result = "";
     if (stdout) result += stdout;
     if (stderr) result += `\n${stderr}`;
     return result.trim() || "(no output)";
   } catch (err) {
+    // If the process was killed by timeout, return a clear error
+    if (err.killed || err.signal === "SIGTERM") {
+      return `Command timed out after ${config.shellTimeout / 1000}s. Try a simpler command.`;
+    }
     return `Command failed (exit ${err.code || "?"}): ${err.stderr?.trim() || err.message}`;
   }
 }

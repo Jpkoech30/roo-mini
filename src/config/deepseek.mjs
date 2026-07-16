@@ -2,10 +2,19 @@ import OpenAI from "openai";
 import { config } from "./index.mjs";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-let activeApiKey = config.apiKey;
-let activeBaseUrl = config.apiBaseUrl;
-let activeModel = config.model;
+// Load .env at module level BEFORE accessing config, since loadConfig() hasn't run yet
+try {
+  const dotenv = await import("dotenv");
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  dotenv.config({ path: path.join(__dirname, "..", "..", ".env") });
+  dotenv.config(); // also try cwd
+} catch { /* dotenv optional */ }
+
+let activeApiKey = process.env.API_KEY || process.env.OPENAI_API_KEY || config.apiKey;
+let activeBaseUrl = process.env.API_BASE_URL || process.env.OPENAI_BASE_URL || config.apiBaseUrl;
+let activeModel = process.env.MODEL || process.env.LLM_MODEL || config.model;
 
 try {
   const profilesPath = path.join(process.cwd(), ".roo-profiles.json");

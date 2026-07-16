@@ -9,7 +9,7 @@ let db = null;
 /**
  * Initialize SQLite database with tasks and memory tables.
  */
-export function initDatabase() {
+export async function initDatabase() {
   const fs = await import("fs/promises");
   await fs.mkdir(DB_DIR, { recursive: true });
   db = new Database(DB_PATH);

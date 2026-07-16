@@ -29,7 +29,7 @@ async function requestApproval(toolName, args) {
   });
 }
 
-export async function executeTool(toolName, args) {
+export async function executeTool(toolName, args, cwd) {
   // Mode enforcement for architect/ask modes
   const mode = process.env.ROO_MODE || "code";
   if ((mode === "architect" || mode === "ask") && !READ_ONLY_TOOLS.has(toolName)) {
@@ -47,7 +47,7 @@ export async function executeTool(toolName, args) {
   // 1. Try built-in implementation
   if (toolImplementations[toolName]) {
     try {
-      const result = await toolImplementations[toolName](args);
+      const result = await toolImplementations[toolName](cwd || process.cwd(), args);
       return result;
     } catch (err) {
       return `Error executing ${toolName}: ${err.message}`;
@@ -56,7 +56,7 @@ export async function executeTool(toolName, args) {
 
   // 2. Try MCP server
   const mcp = getMCP();
-  if (mcp.toolMap[toolName]) {
+  if (mcp.toolMap && mcp.toolMap[toolName]) {
     try {
       const result = await mcp.callTool(toolName, args);
       return result;
@@ -65,5 +65,10 @@ export async function executeTool(toolName, args) {
     }
   }
 
-  return `Unknown tool: ${toolName}. Available tools: ${Object.keys(toolImplementations).join(", ")}`;
+  // 3. Unknown tool — show available tools for debugging
+  const builtinCount = Object.keys(toolImplementations).length;
+  const mcpCount = mcp.toolMap ? Object.keys(mcp.toolMap).length : 0;
+  const totalTools = builtinCount + mcpCount;
+  const availableBuiltins = Object.keys(toolImplementations).join(", ");
+  return `❌ Unknown tool: "${toolName}" (${totalTools} tools available).\nBuilt-in tools: ${availableBuiltins}`;
 }

@@ -111,20 +111,19 @@ function formatContent(text) {
   const result = [];
 
   for (const line of lines) {
-    // Code block fences
+    // Code block fences — minimal markers
     if (line.trimStart().startsWith("```")) {
       inCodeBlock = !inCodeBlock;
       if (inCodeBlock) {
         const lang = line.trim().slice(3);
-        result.push(chalk.blue(`┌─ ${lang || "code"} ─────────────────────────────┐`));
+        result.push(chalk.dim(`── ${lang || "code"} ──`));
       } else {
-        result.push(chalk.blue(`└──────────────────────────────────────────┘`));
+        result.push(chalk.dim(`──`));
       }
       continue;
     }
 
     if (inCodeBlock) {
-      // Code inside blocks — dim with slight indent
       result.push(chalk.dim(`  ${line}`));
       continue;
     }
@@ -279,6 +278,13 @@ export function printToolNarrative(toolName, summary, verbose = false) {
     clear_memory: "🧹", show_memory: "📋", update_project_memory: "💾",
     create_task: "📌", update_task: "📌", list_tasks: "📋",
     search_memory: "🔍", store_memory: "💾", get_memory: "📖",
+    create_subtask: "🔀", create_task_dag: "🔀", list_task_dag: "🌳",
+    get_task_status: "📊", abort_task: "⛔", execute_task: "▶️",
+    execute_plan: "📋",
+    browser_open: "🌐", browser_navigate: "🌐", browser_click: "👆",
+    browser_fill: "⌨️", browser_screenshot: "📸", browser_get_text: "📝",
+    browser_get_html: "📄", browser_evaluate: "⚡", browser_get_url: "🔗",
+    browser_close: "❌",
   };
   const icon = icons[toolName] || "⚙️";
   const isError = summary.startsWith("❌");
@@ -362,7 +368,8 @@ export function printHelp(currentMode) {
     chalk.bold("Commands\n\n") +
     chalk.dim("  help, :h          ") + "Show this help\n" +
     chalk.dim("  exit, :q, quit    ") + "Exit\n" +
-    chalk.dim("  clear, :c         ") + "Clear memory\n\n" +
+    chalk.dim("  clear, :c, cls    ") + "Clear screen\n" +
+    chalk.dim("  clear:memory      ") + "Wipe conversation\n\n" +
     chalk.bold("Modes\n\n") +
     modeLines + "\n\n" +
     chalk.bold("Keys\n\n") +

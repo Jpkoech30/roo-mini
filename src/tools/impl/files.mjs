@@ -7,10 +7,18 @@ const BACKUP_DIR = ".roo-memory/backups";
 function resolveSafe(cwd, filePath) {
   const resolved = path.resolve(cwd, filePath);
   const normalizedCwd = path.resolve(cwd) + path.sep;
-  if (!resolved.startsWith(normalizedCwd)) {
-    throw new Error(`Path traversal detected: "${filePath}" escapes the project directory`);
+
+  // Allow system temp directories — agent may need to write temp scripts
+  const tempDirs = [process.env.TMPDIR, process.env.TMP, process.env.TEMP, "/tmp", "/var/tmp"]
+    .filter(Boolean)
+    .map(d => path.resolve(d) + path.sep);
+
+  const allowed = [normalizedCwd, ...tempDirs];
+  if (allowed.some(dir => resolved.startsWith(dir))) {
+    return resolved;
   }
-  return resolved;
+
+  throw new Error(`Path traversal detected: "${filePath}" escapes the project directory. Allowed: project dir or system temp.`);
 }
 
 async function backupFile(filePath) {
