@@ -1,103 +1,170 @@
-<div align="center">
+# Roo-Mini
 
-# 🦘 Roo-Mini
+[![Node.js Version](https://img.shields.io/badge/node-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![CI](https://github.com/Jpkoech30/roo-mini/actions/workflows/test.yml/badge.svg)](https://github.com/Jpkoech30/roo-mini/actions/workflows/test.yml)
 
-### An Autonomous AI Coding Agent · Powered by DeepSeek
-
-[![Node](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://github.com/your-org/roo-mini/pulls)
-
-**Roo-Mini** is an intelligent CLI agent that reads, writes, refactors, and executes code — all from natural language prompts. It runs in a streaming loop, autonomously choosing the right tool for each task, and stops when the job is done.
-
-</div>
+**Roo-Mini** is an open-source, autonomous AI coding agent that runs in your terminal. It reads, writes, refactors, and executes code from natural language prompts. Powered by your choice of LLM provider — no vendor lock-in.
 
 ---
 
-## ✨ Features
+## Features
 
-| Capability | Description |
-|---|---|
-| **🧠 AI Agent Loop** | The LLM decides which tool to call next — no hardcoded logic |
-| **🔧 14+ Tools** | Read, write, edit, regex search, diff patching, shell commands, and more |
-| **💾 Persistent Memory** | Remembers facts, decisions, and preferences across sessions |
-| **🔍 Smart Search** | Full-text search across conversations & files with glob support |
-| **🎯 Precision Edits** | Apply diff-based patches with fuzzy matching fallback |
-| **🛡️ Safe Execution** | Runs shell commands with full output capture & error handling |
+- **Autonomous code generation** — describe what you want, Roo-Mini builds it
+- **Multi-provider AI support** — works with DeepSeek, OpenAI, and any OpenAI-compatible API
+- **MCP (Model Context Protocol) integration** — extensible tool system for GitHub, Google Workspace, Jira, Docker, Slack, PostgreSQL, and more
+- **File system operations** — read, write, search, refactor, and diff files
+- **Shell execution** — run commands and scripts directly from the agent
+- **Memory system** — persistent project context across sessions
+- **ESLint + tests** — built-in linting and test runner
 
-## 🚀 Quick Start
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) v18 or later
+- An API key from a supported AI provider (see below)
+
+### Installation
 
 ```bash
-# Install dependencies
+git clone https://github.com/Jpkoech30/roo-mini.git
+cd roo-mini
 npm install
+```
 
-# Configure your API key
+### Configuration
+
+Copy the environment file and add your API keys:
+
+```bash
 cp .env.example .env
-# Edit .env → add your DEEPSEEK_API_KEY or OPENAI_API_KEY
+```
 
-# Launch the agent
+Edit `.env` with your preferred AI provider:
+
+```ini
+# Required: your AI API key
+API_KEY=sk-your-key-here
+
+# Optional: change provider (defaults to DeepSeek)
+# API_BASE_URL=https://api.openai.com/v1
+# MODEL_NAME=gpt-4o
+```
+
+### Usage
+
+```bash
 npm start
 ```
 
-## 📦 Requirements
+Interactive mode — type your requests in natural language:
 
-- **Node.js 18+**
-- An OpenAI-compatible API key (DeepSeek, OpenAI, etc.)
+```
+🦘 Roo-Mini — Autonomous AI Coding Agent
 
-## 🧰 Available Tools
+Model: deepseek-chat
+Working directory: /path/to/project
 
-| Tool | Purpose |
-|---|---|
-| `read_file` | Read any file in the project |
-| `write_file` | Write or overwrite a file |
-| `replace_in_file` | Find & replace specific blocks |
-| `apply_diff` | Apply SEARCH/REPLACE diffs with fuzzy fallback |
-| `append_to_file` | Append content to a file |
-| `search_in_file` | Search by text or regex |
-| `search_files_glob` | Glob patterns + content search |
-| `execute_shell` | Run terminal commands |
-| `list_files` | List directory contents |
-| `create_directory` | Create new directories |
-| `delete_file` | Delete files safely |
-| `move_file` | Move or rename files |
-| `update_project_memory` | Save persistent project context |
-| `create_task` / `update_task` / `list_tasks` | Task management |
-| `search_memory` / `store_memory` / `get_memory` | Cross-session memory |
+  Type your request (or 'help' for commands, 'exit' to quit)
+  ───────────────────────────────────────────────
 
-## 🗂️ Project Structure
+  → Create a REST API server with Express
+```
+
+### CLI Options
+
+| Flag | Description |
+|------|-------------|
+| `-v` | Verbose mode — shows full AI responses |
+| `-h` | Show help |
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `help` | Show available commands |
+| `status` | Show current configuration and MCP status |
+| `exit` / `quit` | Exit Roo-Mini |
+
+## MCP Servers
+
+Roo-Mini uses the **Model Context Protocol** to connect to external services. Configured via `roo.config.json`.
+
+| Server | Purpose | Environment Variables |
+|--------|---------|----------------------|
+| **GitHub** | Repository management, file pushing, issues | `GITHUB_TOKEN` |
+| **Google** | Search, Gmail, Calendar, Drive | `GOOGLE_API_KEY`, `GOOGLE_CSE_ID`, OAuth credentials |
+| **Jira** | Issue tracking and project management | `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_HOST` |
+| **Docker** | Container and image management | (uses local Docker socket) |
+| **Slack** | Channel reading and messaging | `SLACK_BOT_TOKEN` |
+| **PostgreSQL** | Database querying and inspection | `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` |
+
+## AI Providers
+
+Roo-Mini is provider-agnostic. Set any OpenAI-compatible endpoint in `.env`:
+
+- **[DeepSeek](https://deepseek.com)** — default (chat mode)
+- **[OpenAI](https://openai.com)** — set `API_BASE_URL` to `https://api.openai.com/v1`
+- **Any OpenAI-compatible API** — set custom `API_BASE_URL` and `MODEL_NAME`
+
+## Project Structure
 
 ```
 roo-mini/
-├── src/                 # Source code
-│   ├── server.mjs       # Express web server (optional)
-│   └── ...
-├── .env                 # Environment variables
-├── package.json
-└── README.md
+├── src/
+│   ├── index.mjs          # CLI entry point
+│   ├── agent.mjs           # Core AI agent logic
+│   ├── config/
+│   │   └── setup.mjs       # First-time configuration
+│   ├── mcp/
+│   │   ├── client.mjs      # MCP client implementation
+│   │   └── servers/        # MCP server adapters
+│   └── server.mjs          # Express test server
+├── tests/                  # Test files (*.test.mjs)
+├── .env.example            # Environment variable template
+├── roo.config.json         # MCP server configuration
+├── eslint.config.mjs       # ESLint configuration
+└── package.json
 ```
 
-## 🧪 Running as a Server
+## Development
 
-This machine (ThinkPad 20NYS3L70N — Intel i7-8665U, 16GB RAM) can run as a web server on the LAN:
+### Running Tests
 
 ```bash
-npm run serve
+npm test
 ```
 
-Access at `http://192.168.1.180:3000`
+### Linting
 
-> **Note:** Firewall is currently disabled on all profiles.
+```bash
+npm run lint
+```
 
-## 🤝 Contributing
+### Full Check
 
-Pull requests are welcome! For major changes, please open an issue first to discuss what you'd like to change.
+```bash
+npm run check    # lint + test
+```
 
-## 📄 License
+## Contributing
 
-[MIT](LICENSE)
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
----
+In short:
 
-<div align="center">
-  <sub>Built with ❤️ by an autonomous agent</sub>
-</div>
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing`)
+5. Open a Pull Request
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for our security policy and reporting process.
+
+## License
+
+[MIT](LICENSE) © 2025 Roo-Mini

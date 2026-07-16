@@ -10,6 +10,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const IS_WINDOWS = process.platform === "win32";
 const TEST_DIR = path.join(__dirname, ".test-tmp");
 const ORIGINAL_CWD = process.cwd();
 
@@ -195,5 +196,71 @@ describe("error handling", () => {
   it("handles non-object args", async () => {
     const result = await executeTool("read_file", "not-an-object");
     assert.ok(result.includes("Missing or invalid arguments"));
+  });
+});
+
+// ─── execute_shell ───
+describe("execute_shell", () => {
+  it("executes a simple command successfully", async () => {
+    const cmd = IS_WINDOWS ? "echo hello" : "echo hello";
+    const result = await executeTool("execute_shell", { command: cmd });
+    assert.ok(result.includes("Command executed"));
+    assert.ok(result.includes("hello"));
+  });
+
+  it("returns error for missing command", async () => {
+    const result = await executeTool("execute_shell", {});
+    assert.ok(result.includes("Missing or invalid"));
+  });
+
+  it("returns error for non-string command", async () => {
+    const result = await executeTool("execute_shell", { command: 123 });
+    assert.ok(result.includes("Missing or invalid"));
+  });
+
+  it("blocks dangerous commands", async () => {
+    const result = await executeTool("execute_shell", { command: "rm -rf /" });
+    assert.ok(result.includes("COMMAND BLOCKED"));
+  });
+
+  it("blocks Windows dangerous commands", async () => {
+    const result = await executeTool("execute_shell", { command: "del /F /S *" });
+    assert.ok(result.includes("COMMAND BLOCKED"));
+  });
+
+  it("blocks base64 decoded execution", async () => {
+    const result = await executeTool("execute_shell", { command: "echo aGVsbG8= | base64 -d" });
+    assert.ok(result.includes("COMMAND BLOCKED"));
+  });
+
+  it("respects the cwd parameter", async () => {
+    // Create a temp dir and a marker file
+    await fs.mkdir("shell-test-subdir", { recursive: true });
+    const cmd = IS_WINDOWS ? "dir /B" : "ls";
+    const result = await executeTool("execute_shell", {
+      command: cmd,
+      cwd: "shell-test-subdir"
+    });
+    // The subdir is empty, so output should be empty or just show "."
+    // cwd was respected, no error about directory not found
+    assert.ok(result.includes("Command executed"), `Expected success, got: ${result}`);
+    // Cleanup
+    await fs.rm("shell-test-subdir", { recursive: true, force: true });
+  });
+
+  it("reports command failure with exit code", async () => {
+    const cmd = IS_WINDOWS ? "exit /B 42" : "exit 42";
+    const result = await executeTool("execute_shell", { command: cmd });
+    assert.ok(result.includes("exit code: 42") || result.includes("Command failed"));
+  });
+
+  it("handles the description parameter gracefully", async () => {
+    const cmd = IS_WINDOWS ? "echo test" : "echo test";
+    const result = await executeTool("execute_shell", {
+      command: cmd,
+      description: "testing description"
+    });
+    assert.ok(result.includes("Command executed"));
+    // Description may or may not appear depending on platform echo behavior
   });
 });

@@ -81,8 +81,11 @@ export async function executeTool(toolName, args, mode = "code") {
   // Try MCP server
   try {
     const mcp = getMCP();
-    if (mcp.initialized) {
+    if (mcp.initialized && mcp.toolMap[toolName]) {
       return await mcp.callTool(toolName, args);
+    }
+    if (mcp.initialized && !mcp.toolMap[toolName]) {
+      return `❌ Tool "${toolName}" is not available. Available MCP tools: ${Object.keys(mcp.toolMap).join(", ") || "none"}`;
     }
   } catch { /* MCP not available */ }
 

@@ -109,11 +109,14 @@ export const tools = [
     type: "function",
     function: {
       name: "execute_shell",
-      description: "Run a terminal command.",
+      description: "Execute a shell command with optional working directory, timeout, and shell selection.",
       parameters: {
         type: "object",
         properties: {
           command: { type: "string", description: "The shell command to run." },
+          cwd: { type: "string", description: "Working directory relative to project root (default: project root)." },
+          timeout: { type: "integer", description: "Timeout in milliseconds (default: 30000, configurable via SHELL_TIMEOUT env var)." },
+          description: { type: "string", description: "Optional description of what the command does (for readability/logging)." },
         },
         required: ["command"],
       },

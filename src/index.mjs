@@ -193,14 +193,13 @@ async function main() {
 
   const initialMode = await loadSavedMode(mode);
   let currentMode = initialMode;
-  console.log(chalk.dim(`Mode: ${currentMode}  ·  :h for help  ·  Tab to complete  ·  ↑↓ history`));
-  console.log("");
+  console.log(chalk.dim(`mode: ${currentMode}  ·  :h help  ·  Tab ↑↓`));
   if (verbose) {console.log(chalk.yellow("🔍 Verbose mode ON"));}
 
   while (true) {
     try {
       // Show prompt
-      const raw = await rl.question(`\n${chalk.bold(`👤 [${currentMode}]`)} `);
+      const raw = await rl.question(chalk.dim("\n─── ") + chalk.bold("You") + chalk.dim(" ───\n  "));
       let trimmed = raw.trim();
       if (!trimmed) {continue;}
 

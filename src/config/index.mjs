@@ -31,6 +31,9 @@ export const config = {
   summaryMaxTokens: parseInt(process.env.SUMMARY_MAX_TOKENS || "300", 10),
   summaryTemperature: parseFloat(process.env.SUMMARY_TEMPERATURE || "0.3"),
 
+  // ── Shell Execution ──
+  shellTimeout: parseInt(process.env.SHELL_TIMEOUT || "30000", 10),
+
   // ── Results ──
-  toolResultMaxChars: parseInt(process.env.TOOL_RESULT_MAX_CHARS || "500", 10),
+  toolResultMaxChars: parseInt(process.env.TOOL_RESULT_MAX_CHARS || "2000", 10),
 };

@@ -263,16 +263,18 @@ export async function runAgent(userPrompt, verbose = false, mode = "code") {
     const mcp = getMCP();
     await mcp.initialize();
     const mcpToolSchemas = mcp.getTools();
-    if (mcpToolSchemas.length > 0) {
-      // Merge MCP tools with built-in tools
+    const mcpCount = mcpToolSchemas.length;
+    if (mcpCount > 0) {
       const builtinNames = new Set(tools.map(t => t.function.name));
+      let added = 0;
       for (const mt of mcpToolSchemas) {
         if (!builtinNames.has(mt.function.name)) {
           tools.push(mt);
+          added++;
         }
       }
       if (verbose) {
-        console.log(`🔌 MCP: ${mcpToolSchemas.length} tool(s) from ${mcp.servers.length} server(s)`);
+        console.log(`🔌 MCP: ${added} tool(s) from ${mcp.servers.length} server(s)`);
       }
     }
   } catch (err) {
@@ -365,6 +367,7 @@ ${sanitize(searchContext)}
 ${sanitize(conversationContext)}
 
 Tools: ${tools.map(t => t.function.name).join(", ")}.
+</parameter>
 
 Workflow:
 1. Do the simplest thing that works
@@ -588,7 +591,7 @@ Rules:
         const totalCostStr = sessionCost < 0.01 ? `< $0.01` : `$${sessionCost.toFixed(4)}`;
         console.log(`📊 Session: ${sessionPromptTokens + sessionCompletionTokens} tokens · ${totalCostStr} · ${iterations} iterations`);
       }
-      UI.printFinalAnswer(cleanAnswer || "Task complete.");
+      console.log("───");
       taskComplete = true;
       try {
         const { addToConversation } = await import("../memory/conversationMemory.mjs");
