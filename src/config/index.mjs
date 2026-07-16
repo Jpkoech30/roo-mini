@@ -1,23 +1,45 @@
-import dotenv from "dotenv";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, "../../.env") });
+
+function loadPackageJson() {
+  try {
+    const pkgPath = path.join(__dirname, "..", "..", "package.json");
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+    return pkg;
+  } catch {
+    return { version: "0.0.0" };
+  }
+}
+
+const pkg = loadPackageJson();
 
 export const config = {
-  apiKey: process.env.API_KEY || process.env.DEEPSEEK_API_KEY || "",
-  apiBaseUrl: process.env.API_BASE_URL || "https://api.deepseek.com/v1",
-  model: process.env.MODEL_NAME || process.env.API_MODEL || "deepseek-chat",
-  apiTimeout: parseInt(process.env.API_TIMEOUT || "60000", 10),
-  maxRetries: parseInt(process.env.MAX_RETRIES || "5", 10),
-  maxMessagesBeforeSummary: parseInt(process.env.MAX_MESSAGES_BEFORE_SUMMARY || "20", 10),
-  maxIterations: parseInt(process.env.MAX_ITERATIONS || "50", 10),
-  backoffBaseMs: parseInt(process.env.BACKOFF_BASE_MS || "1000", 10),
-  backoffMaxMs: parseInt(process.env.BACKOFF_MAX_MS || "30000", 10),
-  summaryModel: process.env.SUMMARY_MODEL || process.env.MODEL_NAME || "deepseek-chat",
-  summaryMaxTokens: parseInt(process.env.SUMMARY_MAX_TOKENS || "300", 10),
-  summaryTemperature: parseFloat(process.env.SUMMARY_TEMPERATURE || "0.3"),
-  shellTimeout: parseInt(process.env.SHELL_TIMEOUT || "30000", 10),
-  toolResultMaxChars: parseInt(process.env.TOOL_RESULT_MAX_CHARS || "2000", 10),
+  version: pkg.version,
+  shellTimeout: 30_000,        // 30 seconds
+  maxToolCallsPerStep: 20,
+  conversationHistoryLimit: 200,
+  llm: {
+    model: process.env.LLM_MODEL || "gpt-4o-mini",
+    temperature: parseFloat(process.env.LLM_TEMPERATURE || "0.7"),
+    maxTokens: parseInt(process.env.LLM_MAX_TOKENS || "4096", 10),
+  },
 };
+
+export function loadConfig() {
+  // Load .env if dotenv is available
+  try {
+    const dotenv = await import("dotenv");
+    dotenv.config();
+  } catch {
+    // dotenv optional
+  }
+
+  // Override from environment
+  if (process.env.SHELL_TIMEOUT) config.shellTimeout = parseInt(process.env.SHELL_TIMEOUT, 10);
+  if (process.env.MAX_TOOL_CALLS) config.maxToolCallsPerStep = parseInt(process.env.MAX_TOOL_CALLS, 10);
+
+  return config;
+}
