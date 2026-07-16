@@ -1,108 +1,94 @@
 # Roo-Mini
 
-[![Node.js Version](https://img.shields.io/badge/node-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-
-**Roo-Mini** is an open-source, autonomous AI coding agent that runs in your terminal. It reads, writes, refactors, and executes code from natural language prompts. Powered by your choice of LLM provider — no vendor lock-in.
-
----
+Lightweight AI coding assistant with **MCP (Model Context Protocol)** support and multi-agent orchestration. Built for local development with flexible tool execution.
 
 ## Features
 
-- **Autonomous code generation** — describe what you want, Roo-Mini builds it
-- **Multi-provider AI support** — works with DeepSeek, OpenAI, and any OpenAI-compatible API
-- **MCP (Model Context Protocol) integration** — extensible tool system for GitHub, Google Workspace, Jira, Docker, Slack, PostgreSQL, and more
-- **File system operations** — read, write, search, refactor, and diff files
-- **Shell execution** — run commands and scripts directly from the agent
-- **Memory system** — persistent project context across sessions
-- **ESLint + tests** — built-in linting and test runner
+- 🤖 **Multi-agent orchestration** — Planner, Scheduler, Delegator, Reporter agents work together
+- 🔧 **MCP Server support** — Connect to Google Workspace, GitHub, Jira, Slack, Docker, Postgres
+- 🧠 **Persistent memory** — Conversation history, task graphs, and memory bank with FTS search
+- 🛠️ **Tool ecosystem** — File ops, shell commands, browser automation, web search, diffs
+- 💰 **Cost tracking** — Track and report AI usage costs per session
+- 🖥️ **Interactive CLI** — Colorful output with boxen/chalk formatting
 
-## Getting Started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) v18 or later
-- An API key from a supported AI provider (see below)
-
-### Installation
+## Quick Start
 
 ```bash
-git clone https://github.com/Jpkoech30/roo-mini.git
-cd roo-mini
+# Install dependencies
 npm install
-```
 
-### Configuration
+# Run setup (creates .env from .env.example)
+npm run setup
 
-Copy the environment file and add your API keys:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your preferred AI provider:
-
-```ini
-# Required: your AI API key
-API_KEY=sk-your-key-here
-
-# Optional: change provider (defaults to DeepSeek)
-# API_BASE_URL=https://api.openai.com/v1
-# MODEL_NAME=gpt-4o
-```
-
-### Usage
-
-```bash
+# Start the assistant
 npm start
 ```
 
-Interactive mode — type your requests in natural language.
+## Requirements
 
-## Supported AI Providers
+- Node.js 18+
+- OpenAI API key (or DeepSeek/other compatible provider)
+- Optional: API keys for MCP services you want to use
 
-| Provider | Base URL | Model |
-|----------|----------|-------|
-| **DeepSeek** (default) | `https://api.deepseek.com` | `deepseek-chat` |
-| **OpenAI** | `https://api.openai.com/v1` | `gpt-4o`, `gpt-4-turbo` |
-| **Any OpenAI-compatible API** | your custom URL | your model |
+## Configuration
 
-Set via environment variables in `.env`:
+Copy `.env.example` to `.env` and fill in your API keys:
 
-```ini
-API_BASE_URL=https://api.openai.com/v1
-MODEL_NAME=gpt-4o
+```
+OPENAI_API_KEY=sk-...
+# Optional MCP services
+GITHUB_TOKEN=ghp_...
+JIRA_EMAIL=you@example.com
+JIRA_API_TOKEN=...
+JIRA_DOMAIN=your-domain.atlassian.net
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_APP_TOKEN=xapp-...
+GOOGLE_CLIENT_EMAIL=...@...iam.gserviceaccount.com
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
+POSTGRES_URL=postgresql://user:pass@localhost:5432/db
 ```
 
 ## MCP Servers
 
-Roo-Mini communicates with external services through MCP (Model Context Protocol) servers. The following servers are pre-configured in `mcp-servers.json`:
+| Server | Tools Provided |
+|--------|---------------|
+| **GitHub** | Create repos, push files, manage issues |
+| **Google Workspace** | Gmail, Calendar, Drive |
+| **Jira** | Search, create, get issues |
+| **Slack** | Read/send messages to channels |
+| **Docker** | List containers, inspect, view logs |
+| **Postgres** | List tables, describe schema, run queries |
 
-| Server | Tools |
-|--------|-------|
-| **GitHub** | Create repos, push files, manage issues, list repos |
-| **Google Workspace** | Search Gmail, send email, list calendar events, manage Drive |
-| **Jira** | Search and create issues |
-| **Docker** | List containers, view logs, inspect containers |
-| **Slack** | Read and send messages to channels |
-| **PostgreSQL** | Query databases, describe tables |
+## Scripts
 
-Each server requires its own credentials or configuration. See the `mcp-servers/` directory for setup instructions for each server.
+| Command | Description |
+|---------|-------------|
+| `npm start` | Run the assistant |
+| `npm run setup` | Interactive setup |
+| `npm run costs` | View cost report |
+| `npm test` | Run test suite |
+| `npm run lint` | Lint source code |
+| `npm run check` | Lint + test |
 
 ## Project Structure
 
 ```
-roo-mini/
 ├── src/
-│   ├── index.mjs          # Entry point — interactive REPL
-│   ├── config/            # Environment and setup
-│   ├── mcp/               # MCP server definitions
-│   └── ...                # Core agent logic
-├── mcp-servers.json       # MCP server configuration
+│   ├── index.mjs          # Entry point
+│   ├── agent/             # Agent loop & modes
+│   ├── config/            # Configuration & setup
+│   ├── mcp/               # MCP server integrations
+│   ├── memory/            # Persistent memory system
+│   ├── orchestration/     # Multi-agent orchestration
+│   ├── tools/             # Tool definitions + implementations
+│   └── ui/                # CLI output formatting
+├── scripts/
+│   └── costs.mjs          # Cost reporting
 ├── tests/                 # Test suite
-├── scripts/               # Utility scripts
-└── .env.example           # Environment template
+├── .github/workflows/     # CI config
+├── .env.example           # Environment template
+├── eslint.config.mjs      # ESLint config
+└── roo.config.json        # Assistant configuration
 ```
 
 ## License
