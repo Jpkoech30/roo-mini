@@ -1,0 +1,26 @@
+{
+  "name": "roo-mini",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.mjs",
+    "dev": "node src/index.mjs -v",
+    "setup": "node src/config/setup.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "lint": "eslint src/ tests/",
+    "check": "npm run lint && npm test"
+  },
+  "dependencies": {
+    "boxen": "^7.1.1",
+    "chalk": "^5.3.0",
+    "diff": "^9.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^5.2.1",
+    "glob": "^10.4.5",
+    "googleapis": "^173.0.0",
+    "openai": "^4.77.3"
+  },
+  "devDependencies": {
+    "eslint": "^10.7.0"
+  }
+}

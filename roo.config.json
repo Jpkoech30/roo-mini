@@ -1,0 +1,42 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "node",
+      "args": ["src/mcp/servers/github.mjs"],
+      "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" }
+    },
+    "google": {
+      "command": "node",
+      "args": ["src/mcp/servers/google.mjs"],
+      "env": {
+        "GOOGLE_API_KEY": "${GOOGLE_API_KEY}",
+        "GOOGLE_CSE_ID": "${GOOGLE_CSE_ID}",
+        "GOOGLE_CLIENT_ID": "${GOOGLE_CLIENT_ID}",
+        "GOOGLE_CLIENT_SECRET": "${GOOGLE_CLIENT_SECRET}"
+      }
+    },
+    "jira": {
+      "command": "node",
+      "args": ["src/mcp/servers/jira.mjs"],
+      "env": {
+        "JIRA_HOST": "${JIRA_HOST}",
+        "JIRA_EMAIL": "${JIRA_EMAIL}",
+        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}"
+      }
+    },
+    "docker": {
+      "command": "node",
+      "args": ["src/mcp/servers/docker.mjs"]
+    },
+    "slack": {
+      "command": "node",
+      "args": ["src/mcp/servers/slack.mjs"],
+      "env": { "SLACK_TOKEN": "${SLACK_TOKEN}" }
+    },
+    "postgres": {
+      "command": "node",
+      "args": ["src/mcp/servers/postgres.mjs"],
+      "env": { "PG_URL": "${PG_URL}" }
+    }
+  }
+}
