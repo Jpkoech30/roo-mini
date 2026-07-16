@@ -1,7 +1,9 @@
 {
   "name": "roo-mini",
   "version": "1.0.0",
+  "description": "Lightweight AI coding assistant with MCP support and multi-agent orchestration",
   "type": "module",
+  "main": "src/index.mjs",
   "scripts": {
     "start": "node src/index.mjs",
     "dev": "node src/index.mjs -v",
@@ -24,5 +26,7 @@
   },
   "devDependencies": {
     "eslint": "^10.7.0"
-  }
+  },
+  "keywords": ["ai", "coding-assistant", "mcp", "agent", "orchestration"],
+  "license": "MIT"
 }
