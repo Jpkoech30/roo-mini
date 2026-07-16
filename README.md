@@ -8,7 +8,19 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Version](https://img.shields.io/badge/version-1.0.0-purple)
 
-[Getting Started](#-quick-start) •
+<p>
+  <a href="vscode://file/Users/jpkoech/roo-mini">
+    <img src="https://img.shields.io/badge/Open%20in%20VS%20Code-007ACC?logo=visualstudiocode&style=for-the-badge" alt="Open in VS Code"/>
+  </a>
+  <a href="https://github.com/Jpkoech30/roo-mini">
+    <img src="https://img.shields.io/badge/View%20on%20GitHub-181717?logo=github&style=for-the-badge" alt="View on GitHub"/>
+  </a>
+  <a href=".">
+    <img src="https://img.shields.io/badge/📂%20Open%20Folder-%23000?style=for-the-badge" alt="Open Folder"/>
+  </a>
+</p>
+
+[Quick Start](#-quick-start) •
 [Features](#-features) •
 [Tools](#-tools-overview) •
 [Configuration](#-configuration) •
