@@ -28,7 +28,7 @@ async function loadSavedMode(defaultMode) {
   try {
     const data = await fs.readFile(path.join(process.cwd(), MEMORY_DIR, MODE_FILE), "utf-8");
     const trimmed = data.trim();
-    if (["code", "architect", "ask"].includes(trimmed)) {return trimmed;}
+    if (["code", "architect", "ask", "orchestrator"].includes(trimmed)) {return trimmed;}
   } catch { /* file doesn't exist yet, use default */ }
   return defaultMode;
 }
@@ -189,11 +189,14 @@ async function main() {
     });
   } catch { /* best effort */ }
 
+  // Set env vars for the welcome banner
+  const initialMode = await loadSavedMode(mode);
+  process.env.ROO_MODE = initialMode;
+  process.env.ROO_TOOL_COUNT = "35";
+
   UI.printHeader();
 
-  const initialMode = await loadSavedMode(mode);
   let currentMode = initialMode;
-  console.log(chalk.dim(`mode: ${currentMode}  ·  :h help  ·  Tab ↑↓`));
   if (verbose) {console.log(chalk.yellow("🔍 Verbose mode ON"));}
 
   while (true) {
@@ -224,24 +227,35 @@ async function main() {
         trimmed = trimmed.slice(0, -1) + "\n" + await readMultiLine(rl);
       }
 
-      // Mode switching
-      if (trimmed.startsWith("mode:") || trimmed.startsWith(":m:")) {
-        const newMode = trimmed.includes(":") ? trimmed.split(":")[1].trim() : "";
-        if (["code", "architect", "ask"].includes(newMode)) {
+      // Mode switching (supports both "mode:code" and natural "change to architect mode")
+      const modeSwitchRegex = /(?:change|switch|set|go)\s+(?:to\s+)?(?:mode\s+)?(code|architect|ask|orchestrator)\s*(?:mode)?\b/i;
+      const modeMatch = trimmed.match(modeSwitchRegex);
+      if (trimmed.startsWith("mode:") || trimmed.startsWith(":m:") || modeMatch) {
+        const newMode = modeMatch ? modeMatch[1].toLowerCase() : trimmed.includes(":") ? trimmed.split(":")[1].trim() : "";
+        if (["code", "architect", "ask", "orchestrator"].includes(newMode)) {
           currentMode = newMode;
           await saveMode(currentMode);
-          console.log(chalk.green(`✅ Mode switched to ${currentMode} (saved)`));
+          console.log(chalk.green(`✅ Switched to ${currentMode} mode (saved)`));
         } else {
-          console.log(chalk.red("❌ Invalid mode. Try: code, architect, ask"));
+          console.log(chalk.red("❌ Invalid mode. Try: code, architect, ask, orchestrator"));
         }
         continue;
       }
 
-      // Clear
-      if (trimmed.toLowerCase() === "clear") {
+      // Clear screen (keeps conversation intact)
+      if (["clear", "cls"].includes(trimmed.toLowerCase())) {
+        process.stdout.write("\x1Bc"); // ANSI escape: clear entire terminal
+        UI.printHeader();
+        continue;
+      }
+
+      // Clear memory (wipes conversation history)
+      if (["clear:memory", "clear:all"].includes(trimmed.toLowerCase())) {
         const { clearConversation } = await import("./memory/conversationMemory.mjs");
         await clearConversation();
-        console.log(chalk.green("🧹 Memory cleared."));
+        process.stdout.write("\x1Bc");
+        UI.printHeader();
+        console.log(chalk.green("🧹 Memory cleared. Fresh start."));
         continue;
       }
 

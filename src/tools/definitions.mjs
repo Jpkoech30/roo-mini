@@ -332,5 +332,271 @@ export const tools = [
         required: ["question"]
       }
     }
-  }
+  },
+  // ═══════════════════════════════════════════
+  //  Orchestration Tools
+  // ═══════════════════════════════════════════
+  {
+    type: "function",
+    function: {
+      name: "create_subtask",
+      description: "Create a sub-task under an existing parent task, with optional dependencies on sibling tasks.",
+      parameters: {
+        type: "object",
+        properties: {
+          parent_id: { type: "integer", description: "ID of the parent task." },
+          title: { type: "string", description: "Title of the sub-task." },
+          description: { type: "string", description: "Optional detailed description." },
+          mode: { type: "string", enum: ["code", "architect", "ask"], description: "Mode to execute this task in (default: code)." },
+          depends_on: { type: "array", items: { type: "integer" }, description: "IDs of sibling tasks this depends on." },
+          priority: { type: "integer", description: "Priority 0-5 (default: 0)." },
+          tags: { type: "array", items: { type: "string" }, description: "Optional tags." },
+        },
+        required: ["parent_id", "title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_task_dag",
+      description: "Create multiple tasks with dependency edges in a single call. Each task can specify which other tasks it depends on by title.",
+      parameters: {
+        type: "object",
+        properties: {
+          tasks: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                title: { type: "string", description: "Task title (unique within this set)." },
+                description: { type: "string", description: "Optional description." },
+                mode: { type: "string", enum: ["code", "architect", "ask"], description: "Execution mode (default: code)." },
+                depends_on: { type: "array", items: { type: "string" }, description: "Titles of tasks this depends on (must be in the same call)." },
+                priority: { type: "integer", description: "Priority 0-5 (default: 0)." },
+                tags: { type: "array", items: { type: "string" }, description: "Optional tags." },
+              },
+              required: ["title"],
+            },
+          },
+          parent_id: { type: "integer", description: "Optional parent task ID to nest under." },
+        },
+        required: ["tasks"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_task_dag",
+      description: "Show the task dependency graph as an indented tree for a project or parent task.",
+      parameters: {
+        type: "object",
+        properties: {
+          project_id: { type: "integer", description: "Filter by project ID." },
+          parent_id: { type: "integer", description: "Filter by parent task ID." },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_task_status",
+      description: "Show detailed status of a specific task including its dependencies and dependents.",
+      parameters: {
+        type: "object",
+        properties: {
+          task_id: { type: "integer", description: "ID of the task to inspect." },
+        },
+        required: ["task_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "abort_task",
+      description: "Cancel a task and all its dependent tasks. Marks them as cancelled.",
+      parameters: {
+        type: "object",
+        properties: {
+          task_id: { type: "integer", description: "ID of the task to abort." },
+          reason: { type: "string", description: "Optional reason for aborting." },
+        },
+        required: ["task_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "execute_task",
+      description: "Execute a single task by spawning a sub-agent in the task's assigned mode. The task must be ready (all dependencies done).",
+      parameters: {
+        type: "object",
+        properties: {
+          task_id: { type: "integer", description: "ID of the task to execute." },
+        },
+        required: ["task_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "execute_plan",
+      description: "Execute all ready tasks in a project or parent task's DAG. Automatically finds ready tasks, executes them, and continues until all tasks are done or blocked.",
+      parameters: {
+        type: "object",
+        properties: {
+          project_id: { type: "integer", description: "ID of the project whose plan to execute." },
+          parent_id: { type: "integer", description: "ID of the parent task whose sub-tasks to execute." },
+        },
+        required: [],
+      },
+    },
+  },
+  // ═══════════════════════════════════════════
+  //  Browser Automation Tools
+  // ═══════════════════════════════════════════
+  {
+    type: "function",
+    function: {
+      name: "browser_open",
+      description: "Launch a headless Chromium browser instance for web automation. No-op if already open.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "browser_navigate",
+      description: "Navigate to a URL and wait for the page to fully load.",
+      parameters: {
+        type: "object",
+        properties: {
+          url: { type: "string", description: "The full URL to navigate to (including https://)." },
+          timeout: { type: "integer", description: "Navigation timeout in ms (default: 30000)." },
+        },
+        required: ["url"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "browser_click",
+      description: "Click an element on the page by CSS selector. Waits for the element to be visible.",
+      parameters: {
+        type: "object",
+        properties: {
+          selector: { type: "string", description: "CSS selector for the element to click." },
+          timeout: { type: "integer", description: "Wait timeout in ms (default: 5000)." },
+        },
+        required: ["selector"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "browser_fill",
+      description: "Fill an input field on the page by CSS selector.",
+      parameters: {
+        type: "object",
+        properties: {
+          selector: { type: "string", description: "CSS selector for the input field." },
+          value: { type: "string", description: "Text to type into the field." },
+          timeout: { type: "integer", description: "Wait timeout in ms (default: 5000)." },
+        },
+        required: ["selector", "value"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "browser_screenshot",
+      description: "Take a screenshot of the current page. Returns a base64 data URI.",
+      parameters: {
+        type: "object",
+        properties: {
+          full_page: { type: "boolean", description: "If true, capture the full scrollable page (default: false)." },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "browser_get_text",
+      description: "Get the visible text content from a CSS selector or the whole page.",
+      parameters: {
+        type: "object",
+        properties: {
+          selector: { type: "string", description: "Optional CSS selector. Omit to get all page text." },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "browser_get_html",
+      description: "Get the inner HTML of an element by CSS selector, or the full page HTML.",
+      parameters: {
+        type: "object",
+        properties: {
+          selector: { type: "string", description: "Optional CSS selector. Omit to get full page HTML." },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "browser_evaluate",
+      description: "Run JavaScript code in the browser page context and return the result.",
+      parameters: {
+        type: "object",
+        properties: {
+          code: { type: "string", description: "JavaScript code to execute in the page." },
+        },
+        required: ["code"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "browser_get_url",
+      description: "Get the current page URL.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "browser_close",
+      description: "Close the browser instance and free resources.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
+    },
+  },
 ];

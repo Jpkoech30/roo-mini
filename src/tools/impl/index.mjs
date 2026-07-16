@@ -9,6 +9,8 @@ import * as fsops from "./fs.mjs";
 import * as shell from "./shell.mjs";
 import * as memory from "./memory.mjs";
 import * as tasks from "./tasks.mjs";
+import * as orchestrate from "./orchestrate.mjs";
+import * as browser from "./browser.mjs";
 
 /** Map of tool name → implementation function */
 export const toolImplementations = {
@@ -44,4 +46,25 @@ export const toolImplementations = {
   search_memory: tasks.searchMemory,
   store_memory: tasks.storeMemory,
   get_memory: tasks.getMemory,
+
+  // Orchestration
+  create_subtask: tasks.createSubTask,
+  create_task_dag: tasks.createTaskDAG,
+  list_task_dag: tasks.listTaskDAG,
+  get_task_status: orchestrate.getTaskStatus,
+  abort_task: orchestrate.abortTask,
+  execute_task: orchestrate.executeTask,
+  execute_plan: orchestrate.executePlan,
+
+  // Browser automation
+  browser_open: browser.browserOpen,
+  browser_navigate: browser.browserNavigate,
+  browser_click: browser.browserClick,
+  browser_fill: browser.browserFill,
+  browser_screenshot: browser.browserScreenshot,
+  browser_get_text: browser.browserGetText,
+  browser_get_html: browser.browserGetHtml,
+  browser_evaluate: browser.browserEvaluate,
+  browser_get_url: browser.browserGetUrl,
+  browser_close: browser.browserClose,
 };

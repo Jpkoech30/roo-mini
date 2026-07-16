@@ -11,17 +11,22 @@ import { getMCP } from "../mcp/client.mjs";
 
 // Tool classification for mode enforcement
 const READ_ONLY_TOOLS = ["read_file", "list_files", "search_in_file", "search_files_glob",
-  "show_memory", "search_memory", "list_tasks", "get_memory"];
+  "show_memory", "search_memory", "list_tasks", "get_memory",
+  "get_task_status", "list_task_dag"];
 const WRITE_TOOLS = [
   "write_file", "replace_in_file", "append_to_file", "apply_diff",
   "move_file", "delete_file", "create_directory", "execute_shell",
   "update_project_memory", "create_task", "update_task", "store_memory",
+  "create_subtask", "create_task_dag", "abort_task", "execute_task", "execute_plan",
+  "browser_open", "browser_navigate", "browser_click", "browser_fill",
+  "browser_screenshot", "browser_get_text", "browser_get_html",
+  "browser_evaluate", "browser_get_url", "browser_close",
 ];
 
 // Approval mode
 const APPROVAL_ENABLED = process.env.ROO_APPROVE === "true" || process.argv.includes("--approve");
 const APPROVAL_TOOLS = ["write_file", "replace_in_file", "append_to_file", "apply_diff",
-  "delete_file", "move_file", "execute_shell"];
+  "delete_file", "move_file", "execute_shell", "abort_task"];
 
 async function requestApproval(toolName, args) {
   // Skip approval prompt if stdin is not a TTY (piped input)

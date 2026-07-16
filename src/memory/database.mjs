@@ -13,7 +13,7 @@ import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
 import fs from 'fs/promises';
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const MEMORY_DIR = '.roo-memory';
 const DB_FILE = 'roo-memory.db';
 
@@ -85,6 +85,10 @@ class AgentDatabase {
 
     if (currentVersion < 1) {
       this._migrate_v1();
+    }
+
+    if (currentVersion < 2) {
+      this._migrate_v2();
     }
 
     // Update version
@@ -176,6 +180,30 @@ class AgentDatabase {
     try {
       this.db.exec("ALTER TABLE tasks ADD COLUMN project_id INTEGER REFERENCES projects(id)");
     } catch { /* column already exists */ }
+  }
+
+  _migrate_v2() {
+    this.db.exec(`
+      -- Task dependencies (DAG support)
+      CREATE TABLE IF NOT EXISTS task_dependencies (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id       INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        depends_on_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        UNIQUE(task_id, depends_on_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_td_task ON task_dependencies(task_id);
+      CREATE INDEX IF NOT EXISTS idx_td_depends ON task_dependencies(depends_on_id);
+
+      -- Add mode column to tasks if not present (for sub-agent mode delegation)
+      ALTER TABLE tasks ADD COLUMN mode TEXT DEFAULT 'code' CHECK(mode IN ('code','architect','ask'));
+
+      -- Add result column to tasks for storing sub-agent output
+      ALTER TABLE tasks ADD COLUMN result TEXT;
+    `);
+    // These ALTER TABLE may fail if columns already exist — that's fine
+    try { this.db.exec("ALTER TABLE tasks ADD COLUMN mode TEXT DEFAULT 'code'"); } catch {}
+    try { this.db.exec("ALTER TABLE tasks ADD COLUMN result TEXT"); } catch {}
   }
 
   // ══════════════════════════════════════════
@@ -375,10 +403,231 @@ class AgentDatabase {
     if (filter.status) { sql += ' AND status = ?'; params.push(filter.status); }
     if (filter.tag) { sql += ' AND tags LIKE ?'; params.push(`%${filter.tag}%`); }
     if (filter.sessionId) { sql += ' AND session_id = ?'; params.push(filter.sessionId); }
+    if (filter.parent_id !== undefined) { sql += ' AND parent_id = ?'; params.push(filter.parent_id); }
+    if (filter.project_id !== undefined) { sql += ' AND project_id = ?'; params.push(filter.project_id); }
 
     sql += ' ORDER BY priority DESC, created_at DESC LIMIT 50';
     const stmt = this.db.prepare(sql);
     return stmt.all(...params);
+  }
+
+  // ══════════════════════════════════════════
+  //  Task Dependencies (DAG)
+  // ══════════════════════════════════════════
+
+  /**
+   * Add a dependency: taskId depends on dependsOnId.
+   * @returns {boolean} True if added, false if already exists
+   */
+  addDependency(taskId, dependsOnId) {
+    this._ensureOpen();
+    try {
+      const stmt = this.db.prepare(`
+        INSERT INTO task_dependencies (task_id, depends_on_id) VALUES (?, ?)
+      `);
+      stmt.run(taskId, dependsOnId);
+      return true;
+    } catch (err) {
+      // UNIQUE constraint violation — already exists
+      if (err.message?.includes('UNIQUE')) {return false;}
+      throw err;
+    }
+  }
+
+  /**
+   * Remove a dependency edge.
+   */
+  removeDependency(taskId, dependsOnId) {
+    this._ensureOpen();
+    const stmt = this.db.prepare(`
+      DELETE FROM task_dependencies WHERE task_id = ? AND depends_on_id = ?
+    `);
+    stmt.run(taskId, dependsOnId);
+  }
+
+  /**
+   * Get all tasks that taskId depends on (predecessors).
+   */
+  getDependencies(taskId) {
+    this._ensureOpen();
+    const stmt = this.db.prepare(`
+      SELECT t.* FROM tasks t
+      JOIN task_dependencies td ON t.id = td.depends_on_id
+      WHERE td.task_id = ?
+      ORDER BY t.created_at ASC
+    `);
+    return stmt.all(taskId);
+  }
+
+  /**
+   * Get all tasks that depend on taskId (successors/dependents).
+   */
+  getDependents(taskId) {
+    this._ensureOpen();
+    const stmt = this.db.prepare(`
+      SELECT t.* FROM tasks t
+      JOIN task_dependencies td ON t.id = td.task_id
+      WHERE td.depends_on_id = ?
+      ORDER BY t.created_at ASC
+    `);
+    return stmt.all(taskId);
+  }
+
+  /**
+   * Get all tasks that are ready to execute (all dependencies done/cancelled).
+   * A task is ready when all its dependencies have status 'done' or 'cancelled'.
+   */
+  getReadyTasks(projectId) {
+    this._ensureOpen();
+    const params = [];
+    let sql = `
+      SELECT t.* FROM tasks t
+      WHERE t.status = 'pending'
+    `;
+    if (projectId !== undefined) { sql += ' AND t.project_id = ?'; params.push(projectId); }
+    sql += `
+      AND NOT EXISTS (
+        SELECT 1 FROM task_dependencies td
+        JOIN tasks dep ON td.depends_on_id = dep.id
+        WHERE td.task_id = t.id
+          AND dep.status NOT IN ('done', 'cancelled')
+      )
+      ORDER BY t.priority DESC, t.created_at ASC
+    `;
+    const stmt = this.db.prepare(sql);
+    return stmt.all(...params);
+  }
+
+  /**
+   * Check if adding a dependency would create a cycle.
+   * Uses BFS from dependsOnId following dependency edges.
+   * If we reach taskId, there's a cycle.
+   */
+  wouldCreateCycle(taskId, dependsOnId) {
+    this._ensureOpen();
+    // BFS following dependency edges
+    const visited = new Set();
+    const queue = [dependsOnId];
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (current === taskId) {return true;} // Cycle detected
+      if (visited.has(current)) {continue;}
+      visited.add(current);
+
+      // Get all tasks that current depends on
+      const deps = this.db.prepare(`
+        SELECT depends_on_id FROM task_dependencies WHERE task_id = ?
+      `).all(current);
+
+      for (const d of deps) {
+        if (!visited.has(d.depends_on_id)) {
+          queue.push(d.depends_on_id);
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Get the full dependency chain for a task (all ancestors).
+   */
+  getDependencyChain(taskId) {
+    this._ensureOpen();
+    const ancestors = [];
+    const visited = new Set();
+    const queue = [taskId];
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (visited.has(current)) {continue;}
+      visited.add(current);
+
+      const deps = this.db.prepare(`
+        SELECT DISTINCT t.* FROM tasks t
+        JOIN task_dependencies td ON t.id = td.depends_on_id
+        WHERE td.task_id = ?
+      `).all(current);
+
+      for (const d of deps) {
+        ancestors.push(d);
+        queue.push(d.id);
+      }
+    }
+
+    return ancestors;
+  }
+
+  /**
+   * Bulk-create tasks with dependencies in a transaction.
+   * @param {Array} tasksData - Array of {title, mode, description, depends_on: [taskTitles], priority, tags}
+   * @param {number} [parentId] - Optional parent task ID
+   * @returns {Array} Created tasks with their IDs
+   */
+  createTaskDAG(tasksData, parentId = null, sessionId = null) {
+    this._ensureOpen();
+
+    const insertTask = this.db.prepare(`
+      INSERT INTO tasks (title, description, status, priority, mode, session_id, parent_id, tags)
+      VALUES (?, ?, 'pending', ?, ?, ?, ?, ?)
+    `);
+    const insertDep = this.db.prepare(`
+      INSERT INTO task_dependencies (task_id, depends_on_id) VALUES (?, ?)
+    `);
+
+    const createdTasks = [];
+
+    // Use manual transaction (DatabaseSync does not have .transaction())
+    try {
+      this.db.exec('BEGIN');
+
+      // Insert all tasks
+      for (const task of tasksData) {
+        const result = insertTask.run(
+          task.title,
+          task.description || null,
+          task.priority || 0,
+          task.mode || 'code',
+          sessionId,
+          parentId,
+          task.tags ? JSON.stringify(task.tags) : null
+        );
+        createdTasks.push({
+          id: Number(result.lastInsertRowid),
+          title: task.title,
+          mode: task.mode || 'code',
+          depends_on: task.depends_on || [],
+        });
+      }
+
+      // Create a title→ID map
+      const titleToId = {};
+      for (const t of createdTasks) {
+        titleToId[t.title] = t.id;
+      }
+
+      // Add dependencies
+      for (const task of createdTasks) {
+        if (task.depends_on && task.depends_on.length > 0) {
+          for (const depTitle of task.depends_on) {
+            const depId = titleToId[depTitle];
+            if (depId !== undefined) {
+              if (!this.wouldCreateCycle(task.id, depId)) {
+                insertDep.run(task.id, depId);
+              }
+            }
+          }
+        }
+      }
+
+      this.db.exec('COMMIT');
+    } catch (err) {
+      this.db.exec('ROLLBACK');
+      throw err;
+    }
+
+    return createdTasks;
   }
 
   // ══════════════════════════════════════════

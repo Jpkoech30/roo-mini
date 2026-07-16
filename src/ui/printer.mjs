@@ -167,16 +167,27 @@ function formatContent(text) {
   return result.join("\n");
 }
 
-// ─── Header ───
+// ─── Header / Welcome Banner ───
 
 export function printHeader() {
+  const version = process.env.npm_package_version || "1.0.0";
+  const mode = process.env.ROO_MODE || "code";
+  const toolCount = process.env.ROO_TOOL_COUNT || "~35";
+
   console.log(
-    boxen(chalk.bold.cyan("🤖  ROO-MINI") + chalk.gray(" · AI Agent"), {
-      padding: { top: 1, bottom: 1, left: 2, right: 2 },
-      borderColor: "cyan",
-      borderStyle: "round",
-      margin: { bottom: 1 },
-    })
+    boxen(
+      chalk.bold.cyan("🤖 ROO-MINI") +
+      chalk.gray(` v${version}`) +
+      chalk.gray(` · ${toolCount} tools`) +
+      chalk.gray(` · mode: ${mode}`) +
+      `\n${chalk.dim(":h help · :q exit · :c clear · Tab ↑↓")}`,
+      {
+        padding: { top: 1, bottom: 1, left: 2, right: 2 },
+        borderColor: "cyan",
+        borderStyle: "round",
+        margin: { bottom: 1 },
+      }
+    )
   );
 }
 
@@ -342,14 +353,18 @@ export function printFallback() {
 }
 
 export function printHelp(currentMode) {
+  const modes = ["code", "architect", "ask", "orchestrator"];
+  const modeLines = modes.map(m =>
+    chalk.dim(`  mode:${m}${currentMode === m ? "  ← current" : ""}`)
+  ).join("\n");
+
   const help = boxen(
     chalk.bold("Commands\n\n") +
     chalk.dim("  help, :h          ") + "Show this help\n" +
     chalk.dim("  exit, :q, quit    ") + "Exit\n" +
-    chalk.dim("  clear, :c         ") + "Clear memory\n" +
-    chalk.dim(`  mode:code${currentMode === "code" ? "  ← current" : ""}\n`) +
-    chalk.dim(`  mode:architect${currentMode === "architect" ? "  ← current" : ""}\n`) +
-    chalk.dim(`  mode:ask${currentMode === "ask" ? "  ← current" : ""}\n\n`) +
+    chalk.dim("  clear, :c         ") + "Clear memory\n\n" +
+    chalk.bold("Modes\n\n") +
+    modeLines + "\n\n" +
     chalk.bold("Keys\n\n") +
     chalk.dim("  ↑/↓  ") + "History\n" +
     chalk.dim("  Tab  ") + "Complete\n" +
