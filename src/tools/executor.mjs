@@ -1,41 +1,23 @@
-/**
- * Tool executor — dispatches to built-in implementations or MCP servers.
- *
- * Tool resolution order:
- * 1. Built-in tools (from impl/)
- * 2. MCP server tools (from roo.config.json)
- */
-
 import { toolImplementations } from "./impl/index.mjs";
 import { getMCP } from "../mcp/client.mjs";
 
-// Tool classification for mode enforcement
-const READ_ONLY_TOOLS = ["read_file", "list_files", "search_in_file", "search_files_glob",
-  "show_memory", "search_memory", "list_tasks", "get_memory"];
-const WRITE_TOOLS = [
-  "write_file", "replace_in_file", "append_to_file", "apply_diff",
-  "move_file", "delete_file", "create_directory", "execute_shell",
-  "update_project_memory", "create_task", "update_task", "store_memory",
-];
+const READ_ONLY_TOOLS = new Set(["read_file", "list_files", "search_in_file", "search_files_glob",
+  "show_memory", "search_memory", "list_tasks", "get_memory",
+  "get_task_status", "list_task_dag"]);
 
-// Approval mode
+const APPROVAL_TOOLS = new Set(["write_file", "replace_in_file", "append_to_file", "apply_diff",
+  "delete_file", "move_file", "execute_shell", "abort_task"]);
+
 const APPROVAL_ENABLED = process.env.ROO_APPROVE === "true" || process.argv.includes("--approve");
-const APPROVAL_TOOLS = ["write_file", "replace_in_file", "append_to_file", "apply_diff",
-  "delete_file", "move_file", "execute_shell"];
 
 async function requestApproval(toolName, args) {
-  // Skip approval prompt if stdin is not a TTY (piped input)
-  if (!process.stdin.isTTY) {return true;}
-
+  if (!process.stdin.isTTY) return true;
   const summary = Object.entries(args)
-    .map(([k, v]) => {
-      const val = typeof v === "string" && v.length > 80 ? v.slice(0, 80) + "..." : String(v);
-      return `${k}: ${val}`;
-    })
+    .map(([k, v]) => `${k}: ${typeof v === "string" && v.length > 80 ? v.slice(0, 80) + "..." : String(v)}`)
     .join("\n  ");
 
   return new Promise(resolve => {
-    process.stdout.write(`\n🔐 Approve ${toolName}?\n  ${summary}\n  [y/N] `);
+    process.stdout.write(`\nApprove ${toolName}?\n  ${summary}\n  [y/N] `);
     const onData = (chunk) => {
       const answer = chunk.toString().trim().toLowerCase();
       process.stdin.removeListener("data", onData);
@@ -47,71 +29,41 @@ async function requestApproval(toolName, args) {
   });
 }
 
-/**
- * Execute a tool by name with the given arguments.
- * Routes to built-in or MCP server depending on availability.
- */
-export async function executeTool(toolName, args, mode = "code") {
-  if (!toolName || typeof toolName !== "string") {return "❌ Invalid tool name.";}
-  if (!args || typeof args !== "object") {return "❌ Missing or invalid arguments.";}
-
-  // Mode enforcement
-  if (mode === "ask" && !READ_ONLY_TOOLS.includes(toolName)) {
-    return `❌ Tool "${toolName}" is not allowed in Ask mode.`;
-  }
-  if (mode === "architect" && WRITE_TOOLS.includes(toolName)) {
-    return `❌ Tool "${toolName}" is not allowed in Architect mode.`;
+export async function executeTool(toolName, args) {
+  // Mode enforcement for architect/ask modes
+  const mode = process.env.ROO_MODE || "code";
+  if ((mode === "architect" || mode === "ask") && !READ_ONLY_TOOLS.has(toolName)) {
+    return `Cannot use "${toolName}" in ${mode} mode. Ask/Architect modes are read-only.`;
   }
 
-  // Approval mode
-  if (APPROVAL_ENABLED && APPROVAL_TOOLS.includes(toolName)) {
+  // Approval gate
+  if (APPROVAL_ENABLED && APPROVAL_TOOLS.has(toolName)) {
     const approved = await requestApproval(toolName, args);
-    if (!approved) {return `⏭️ Skipped ${toolName} (not approved)`;}
+    if (!approved) {
+      return `User denied approval for ${toolName}.`;
+    }
   }
 
-  // Try built-in first
+  // 1. Try built-in implementation
   if (toolImplementations[toolName]) {
     try {
-      return await toolImplementations[toolName](process.cwd(), args);
+      const result = await toolImplementations[toolName](args);
+      return result;
     } catch (err) {
-      return `❌ Error in ${toolName}: ${err.message}`;
+      return `Error executing ${toolName}: ${err.message}`;
     }
   }
 
-  // Try MCP server
-  try {
-    const mcp = getMCP();
-    if (mcp.initialized && mcp.toolMap[toolName]) {
-      return await mcp.callTool(toolName, args);
+  // 2. Try MCP server
+  const mcp = getMCP();
+  if (mcp.toolMap[toolName]) {
+    try {
+      const result = await mcp.callTool(toolName, args);
+      return result;
+    } catch (err) {
+      return `MCP error in ${toolName}: ${err.message}`;
     }
-    if (mcp.initialized && !mcp.toolMap[toolName]) {
-      return `❌ Tool "${toolName}" is not available. Available MCP tools: ${Object.keys(mcp.toolMap).join(", ") || "none"}`;
-    }
-  } catch { /* MCP not available */ }
-
-  return `❌ Unknown tool: ${toolName}`;
-}
-
-/**
- * Get all available tools (built-in + MCP).
- */
-export async function getAllTools() {
-  const tools = [];
-
-  // Built-in tools
-  for (const [name] of Object.entries(toolImplementations)) {
-    tools.push(name);
   }
 
-  // MCP tools
-  try {
-    const mcp = getMCP();
-    if (mcp.initialized) {
-      for (const t of mcp.getTools()) {
-        tools.push(t.function.name);
-      }
-    }
-  } catch { /* MCP not available */ }
-
-  return [...new Set(tools)]; // deduplicate
+  return `Unknown tool: ${toolName}. Available tools: ${Object.keys(toolImplementations).join(", ")}`;
 }
